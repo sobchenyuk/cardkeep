@@ -47,5 +47,15 @@ export const useToast = defineStore('toast', () => {
     return id
   }
 
-  return { items, show, update, dismiss }
+  /** Hold a toast on screen (e.g. while the user is dragging it). */
+  function pause(id: number) {
+    clearTimeout(timers.get(id))
+    timers.delete(id)
+  }
+  function resume(id: number) {
+    const t = items.value.find((x) => x.id === id)
+    if (t) schedule(t)
+  }
+
+  return { items, show, update, dismiss, pause, resume }
 })

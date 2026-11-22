@@ -17,7 +17,9 @@ const categories = useCategories()
 const toast = useToast()
 
 const existing = props.id ? cards.get(props.id) : undefined
-const isEdit = !!existing
+// After the first save a new card becomes an edited one — the form stays open.
+const cardId = ref<string | undefined>(existing?.id)
+const isEdit = computed(() => !!cardId.value)
 
 const form = reactive<CardDraft>({
   id: existing?.id,
@@ -105,10 +107,13 @@ async function save() {
   saving.value = true
   const id = toast.show('progress', 'Зберігаємо…')
   try {
+    const wasEdit = isEdit.value
     const card = await cards.save({ ...form })
-    toast.update(id, 'success', isEdit ? 'Зміни збережено' : `Картку «${card.title}» додано`)
-    // Leave the form and show the saved card right away; the user returns to the list themselves.
-    router.replace({ name: 'cards', query: { card: card.id } })
+    form.id = card.id
+    cardId.value = card.id
+    toast.update(id, 'success', wasEdit ? 'Картку оновлено' : `Картку «${card.title}» створено`)
+    // Stay in the form; a new card's URL becomes its edit URL. The user leaves on their own.
+    if (!wasEdit) router.replace({ name: 'edit', params: { id: card.id } })
   } catch (e) {
     const quota = (e as DOMException)?.name === 'QuotaExceededError'
     toast.update(id, 'error', quota ? 'Недостатньо місця на пристрої' : 'Не вдалося зберегти картку', { label: 'Повторити', run: save })
@@ -120,7 +125,7 @@ async function save() {
 const confirmDelete = ref(false)
 let confirmTimer: ReturnType<typeof setTimeout>
 async function remove() {
-  if (!existing) return
+  if (!cardId.value) return
   if (!confirmDelete.value) {
     confirmDelete.value = true
     clearTimeout(confirmTimer)
@@ -128,7 +133,7 @@ async function remove() {
     return
   }
   try {
-    await cards.remove(existing.id)
+    await cards.remove(cardId.value)
     toast.show('success', 'Картку видалено')
     router.replace({ name: 'cards' })
   } catch {

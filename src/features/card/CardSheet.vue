@@ -5,6 +5,7 @@ import { useCategories } from '@/stores/categories'
 import { useToast } from '@/stores/toast'
 import { useObjectUrl } from '@/utils/useObjectUrl'
 import CodeView from './CodeView.vue'
+import StoreMap from '@/features/map/StoreMap.vue'
 
 const props = defineProps<{ card: Card }>()
 const emit = defineEmits<{ close: []; edit: [] }>()
@@ -44,6 +45,8 @@ let decided = false
 
 function canStart(target: EventTarget | null) {
   if ((body.value?.scrollTop ?? 0) > 0) return false
+  // The map pans with its own gestures.
+  if ((target as HTMLElement | null)?.closest?.('.leaflet-container')) return false
   const desc = (target as HTMLElement | null)?.closest?.('.desc') as HTMLElement | null
   return !(desc && desc.scrollTop > 0)
 }
@@ -173,6 +176,8 @@ async function share() {
           <button class="edit" @click="emit('edit')">Редагувати</button>
           <button class="share" @click="share">Поділитися</button>
         </div>
+
+        <StoreMap :title="card.title" />
       </div>
     </section>
   </div>

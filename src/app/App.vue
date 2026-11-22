@@ -8,6 +8,7 @@ import { useSettings } from '@/stores/settings'
 import { useToast } from '@/stores/toast'
 import { useCards } from '@/stores/cards'
 import { useCategories } from '@/stores/categories'
+import { hideSplash } from './splash'
 
 useSettings()
 const toast = useToast()
@@ -23,7 +24,9 @@ async function load() {
   try {
     await Promise.all([cards.load(), categories.load()])
     ready.value = true
+    hideSplash()
   } catch {
+    hideSplash()
     toast.show('error', 'Сховище недоступне. Можливо, увімкнено приватний режим браузера.', { label: 'Повторити', run: load })
   }
 }

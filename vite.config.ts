@@ -25,7 +25,7 @@ export default defineConfig({
         scope: base,
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#f6f5ff',
+        background_color: '#6a4cff', // matches the in-app splash
         theme_color: '#f6f5ff',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
@@ -38,6 +38,18 @@ export default defineConfig({
         navigateFallback: `${base}index.html`,
         // The barcode renderer chunk is ~2 MB; keep it precached for offline use.
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        // Map tiles: cache what the user has seen, bounded, so the map works offline for familiar areas.
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/tile\.openstreetmap\.org\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'osm-tiles',
+              expiration: { maxEntries: 400, maxAgeSeconds: 30 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
     }),
   ],
