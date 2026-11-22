@@ -1,0 +1,42 @@
+import { fileURLToPath, URL } from 'node:url'
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import { VitePWA } from 'vite-plugin-pwa'
+
+// GitHub Pages serves the app from /cardkeep/
+const base = '/cardkeep/'
+
+export default defineConfig({
+  base,
+  resolve: {
+    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+  },
+  plugins: [
+    vue(),
+    VitePWA({
+      registerType: 'prompt',
+      includeAssets: ['icon.svg', 'apple-touch-icon.png'],
+      manifest: {
+        name: 'CardKeep',
+        short_name: 'CardKeep',
+        description: 'Скидочні картки, які належать вам',
+        lang: 'uk',
+        start_url: base,
+        scope: base,
+        display: 'standalone',
+        orientation: 'portrait',
+        background_color: '#f4f4f2',
+        theme_color: '#f4f4f2',
+        icons: [
+          { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        navigateFallback: `${base}index.html`,
+      },
+    }),
+  ],
+})
