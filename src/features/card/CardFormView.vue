@@ -72,17 +72,6 @@ async function addCategory() {
   }
 }
 
-// Light validation hint for numeric retail codes
-const codeHint = computed(() => {
-  const c = form.code.trim()
-  if (!c) return ''
-  const digits: Partial<Record<CodeFormat, number>> = { ean13: 13, ean8: 8, upca: 12 }
-  const n = digits[form.codeFormat]
-  if (n && !/^\d+$/.test(c)) return 'Цей формат містить лише цифри'
-  if (n && c.length !== n && c.length !== n - 1) return `Очікується ${n} цифр`
-  return ''
-})
-
 async function save() {
   titleError.value = form.title.trim() ? '' : 'Введіть назву картки'
   if (titleError.value) return
@@ -146,8 +135,7 @@ const back = () => (window.history.state?.back ? router.back() : router.replace(
 
     <label class="field">
       <span>Номер / код картки</span>
-      <input v-model="form.code" class="input mono" placeholder="Введіть цифри з картки" autocomplete="off" autocapitalize="off" spellcheck="false" />
-      <small v-if="codeHint" class="error-text">{{ codeHint }}</small>
+      <input v-model="form.code" class="input mono" placeholder="Будь-яка кількість цифр чи символів" autocomplete="off" autocapitalize="off" spellcheck="false" />
     </label>
 
     <label class="field">

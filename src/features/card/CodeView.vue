@@ -19,11 +19,12 @@ const SQUARE = new Set<CodeFormat>(['qr', 'datamatrix', 'aztec'])
 
 const svg = ref('')
 const failed = ref(false)
-const reason = ref('')
+const fallback = ref(false)
 
 watchEffect(async () => {
   svg.value = ''
   failed.value = false
+  fallback.value = false
   if (!props.code || props.format === 'none') return
   try {
     // Lazy: the barcode library is large and only needed on this screen.
@@ -31,18 +32,24 @@ watchEffect(async () => {
     // Note: omit `height` for 2D codes entirely — bwip-js rejects undefined values.
     const opts: Parameters<typeof toSVG>[0] = { bcid: BCID[props.format], text: props.code, scale: 3 }
     if (!SQUARE.has(props.format)) opts.height = 18
-    svg.value = toSVG(opts)
-  } catch (e) {
+    try {
+      svg.value = toSVG(opts)
+    } catch {
+      // No length/charset limits on user input: if the code doesn't fit the chosen
+      // format (e.g. 2 digits as EAN-13), render it as Code 128, which accepts any text.
+      fallback.value = true
+      svg.value = toSVG({ bcid: 'code128', text: props.code, scale: 3, height: 18 })
+    }
+  } catch {
     failed.value = true
-    reason.value = /check/i.test(String(e)) ? 'Контрольна цифра не збігається' : 'Код не відповідає обраному формату'
   }
 })
 </script>
 
 <template>
-  <div v-if="code" class="code" :class="{ square: SQUARE.has(format) }">
+  <div v-if="code" class="code" :class="{ square: SQUARE.has(format) && !fallback }">
     <div v-if="svg" class="img" v-html="svg" />
-    <p v-else-if="failed" class="warn">{{ reason }} — покажіть номер касиру або змініть формат</p>
+    <p v-else-if="failed" class="warn">Не вдалося намалювати код — покажіть номер касиру</p>
     <p class="num">{{ code }}</p>
   </div>
 </template>
