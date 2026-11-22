@@ -5,7 +5,7 @@ import { compressImage, CompressError, formatKB } from '@/utils/compress'
 import { useToast } from '@/stores/toast'
 
 const props = defineProps<{ label: string; modelValue: Blob | null }>()
-const emit = defineEmits<{ 'update:modelValue': [Blob | null] }>()
+const emit = defineEmits<{ 'update:modelValue': [Blob | null]; picked: [File] }>()
 const toast = useToast()
 const url = useObjectUrl(toRef(() => props.modelValue))
 const input = ref<HTMLInputElement>()
@@ -17,6 +17,7 @@ async function process(file: File) {
   try {
     const blob = await compressImage(file)
     emit('update:modelValue', blob)
+    emit('picked', file)
     toast.update(id, 'success', `Фото готове · ${formatKB(blob.size)}`)
   } catch (e) {
     const msg = e instanceof CompressError ? e.message : 'Не вдалося обробити фото'

@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type { CodeFormat } from '@/db'
 import { useCards, type CardDraft } from '@/stores/cards'
 import { useCategories, CategoryError } from '@/stores/categories'
 import { useToast } from '@/stores/toast'
 import PhotoSlot from './PhotoSlot.vue'
+import ScannerOverlay from '@/features/scan/ScannerOverlay.vue'
+import { detectInImage, type ScanResult } from '@/features/scan/detector'
 
 const props = defineProps<{ id?: string }>()
 const router = useRouter()
+const route = useRoute()
 const cards = useCards()
 const categories = useCategories()
 const toast = useToast()
@@ -22,7 +25,11 @@ const FORMATS: { value: CodeFormat; label: string }[] = [
   { value: 'code128', label: 'Code 128' },
   { value: 'ean8', label: 'EAN-8' },
   { value: 'upca', label: 'UPC-A' },
+  { value: 'upce', label: 'UPC-E' },
   { value: 'code39', label: 'Code 39' },
+  { value: 'code93', label: 'Code 93' },
+  { value: 'codabar', label: 'Codabar' },
+  { value: 'itf', label: 'ITF (Interleaved 2 of 5)' },
   { value: 'pdf417', label: 'PDF417' },
   { value: 'datamatrix', label: 'Data Matrix' },
   { value: 'aztec', label: 'Aztec' },
@@ -69,6 +76,32 @@ async function addCategory() {
     newCategory.value = ''
   } catch (e) {
     categoryError.value = e instanceof CategoryError ? e.message : 'Не вдалося створити категорію'
+  }
+}
+
+// Scanner lives in the history (?scan=1) so the phone's back button closes it.
+const scanning = computed(() => route.query.scan === '1')
+const openScanner = () => router.push({ query: { ...route.query, scan: '1' } })
+const closeScanner = () => (window.history.state?.back ? router.back() : router.replace({ query: { ...route.query, scan: undefined } }))
+function applyScan(r: ScanResult, source: string) {
+  form.code = r.code
+  form.codeFormat = r.format
+  const label = FORMATS.find((f) => f.value === r.format)?.label ?? r.format
+  toast.show('success', `${source}: ${label}`)
+}
+function onScanned(r: ScanResult) {
+  closeScanner()
+  applyScan(r, 'Код відскановано')
+}
+
+// When a card photo is added and the code is still empty, try to read the code from it.
+async function autoDetect(file: File) {
+  if (form.code.trim()) return
+  try {
+    const r = await detectInImage(file)
+    if (r && !form.code.trim()) applyScan(r, 'Код знайдено на фото')
+  } catch {
+    /* silent: this is a convenience, the user can still scan or type */
   }
 }
 
@@ -123,8 +156,8 @@ const back = () => (window.history.state?.back ? router.back() : router.replace(
 
   <form class="form" novalidate @submit.prevent="save">
     <div class="photos">
-      <PhotoSlot v-model="form.frontPhoto" label="Лицьова" />
-      <PhotoSlot v-model="form.backPhoto" label="Зворотна" />
+      <PhotoSlot v-model="form.frontPhoto" label="Лицьова" @picked="autoDetect" />
+      <PhotoSlot v-model="form.backPhoto" label="Зворотна" @picked="autoDetect" />
     </div>
 
     <label class="field">
@@ -133,10 +166,15 @@ const back = () => (window.history.state?.back ? router.back() : router.replace(
       <small v-if="titleError" class="error-text">{{ titleError }}</small>
     </label>
 
-    <label class="field">
+    <div class="field">
       <span>Номер / код картки</span>
-      <input v-model="form.code" class="input mono" placeholder="Будь-яка кількість цифр чи символів" autocomplete="off" autocapitalize="off" spellcheck="false" />
-    </label>
+      <div class="coderow">
+        <input v-model="form.code" class="input mono" placeholder="Будь-яка кількість цифр чи символів" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Номер / код картки" />
+        <button type="button" class="scanbtn" aria-label="Сканувати код" @click="openScanner">
+          <svg viewBox="0 0 24 24" width="24" height="24"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M7 12h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+        </button>
+      </div>
+    </div>
 
     <label class="field">
       <span>Формат коду</span>
@@ -170,6 +208,8 @@ const back = () => (window.history.state?.back ? router.back() : router.replace(
       {{ confirmDelete ? 'Натисніть ще раз, щоб видалити' : 'Видалити картку' }}
     </button>
   </form>
+
+  <ScannerOverlay v-if="scanning" @result="onScanned" @close="closeScanner" />
 </template>
 
 <style scoped>
@@ -178,6 +218,10 @@ const back = () => (window.history.state?.back ? router.back() : router.replace(
 .icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; color: var(--text); }
 .form { display: flex; flex-direction: column; gap: 16px; padding: 8px 16px calc(32px + env(safe-area-inset-bottom)); max-width: 560px; margin: 0 auto; }
 .photos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.coderow { display: flex; gap: 8px; }
+.coderow .input { flex: 1; min-width: 0; }
+.scanbtn { flex: none; width: 54px; border-radius: 16px; background: var(--accent); color: var(--accent-text); display: grid; place-items: center; transition: transform 0.1s; }
+.scanbtn:active { transform: scale(0.95); }
 .mono { font-family: ui-monospace, Menlo, monospace; letter-spacing: 0.06em; }
 .newcat { display: flex; gap: 8px; }
 .newcat .input { flex: 1; min-width: 0; }
