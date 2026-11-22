@@ -28,6 +28,7 @@ const toast = useToast()
   left: 0;
   right: 0;
   bottom: calc(var(--nav-h) + var(--nav-gap) + env(safe-area-inset-bottom) + 12px);
+  transition: bottom 0.2s;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -64,4 +65,8 @@ const toast = useToast()
 @keyframes spin { to { transform: rotate(360deg); } }
 .toast-enter-active, .toast-leave-active { transition: opacity 0.25s var(--ease), transform 0.25s var(--ease); }
 .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(12px); }
+</style>
+<style>
+/* When the bottom nav is hidden (forms), toasts sit lower. */
+.toasts.low { bottom: auto !important; top: calc(12px + env(safe-area-inset-top)); flex-direction: column-reverse; }
 </style>

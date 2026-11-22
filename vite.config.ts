@@ -36,6 +36,8 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallback: `${base}index.html`,
+        // The barcode renderer chunk is ~2 MB; keep it precached for offline use.
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
     }),
   ],
