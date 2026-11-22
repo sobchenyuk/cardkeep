@@ -32,6 +32,6 @@ const { updateServiceWorker } = useRegisterSW({
 .shell { min-height: 100%; }
 .content {
   padding-top: env(safe-area-inset-top);
-  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  padding-bottom: calc(var(--nav-h) + var(--nav-gap) * 2 + env(safe-area-inset-bottom));
 }
 </style>

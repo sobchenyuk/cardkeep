@@ -16,5 +16,5 @@ defineProps<{ title: string }>()
   justify-content: space-between;
   padding: 20px 16px 12px;
 }
-h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; }
 </style>

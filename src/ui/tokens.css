@@ -1,20 +1,24 @@
-/* Design tokens. Strict palette: one accent, neutral surfaces. */
+/* Design tokens — style 4 "Плитка": lavender, violet accent. */
 :root {
-  --bg: #f4f4f2;
+  --bg: #f6f5ff;
   --surface: #ffffff;
-  --surface-2: #ecece8;
-  --text: #141414;
-  --text-2: #5f5f5a;
-  --border: #e0e0db;
-  --accent: #1d3b34;
+  --surface-2: #ebe6ff;
+  --text: #14122b;
+  --text-2: #6e6a8e;
+  --border: #e6e3f7;
+  --accent: #6a4cff;
+  --accent-soft: #ebe6ff;
   --accent-text: #ffffff;
-  --danger: #b3261e;
-  --toast-bg: #1f1f1f;
-  --toast-text: #f4f4f2;
+  --danger: #e5484d;
+  --toast-bg: #14122b;
+  --toast-text: #ffffff;
+  --shadow: 0 8px 24px rgb(60 40 140 / 0.10);
 
-  --radius: 16px;
-  --radius-sm: 10px;
+  --radius: 28px;
+  --radius-card: 24px;
+  --radius-sm: 14px;
   --nav-h: 64px;
+  --nav-gap: 14px;
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   color-scheme: light;
@@ -22,32 +26,36 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #121212;
-    --surface: #1c1c1c;
-    --surface-2: #262626;
-    --text: #f2f2ef;
-    --text-2: #a3a39e;
-    --border: #2e2e2e;
-    --accent: #8cc4b2;
-    --accent-text: #0e1f1a;
-    --danger: #f2b8b5;
-    --toast-bg: #f2f2ef;
-    --toast-text: #141414;
+    --bg: #100e1f;
+    --surface: #1c1a31;
+    --surface-2: #2a2650;
+    --text: #f1efff;
+    --text-2: #a29fc4;
+    --border: #2c2a47;
+    --accent: #9d8bff;
+    --accent-soft: #2e2760;
+    --accent-text: #14122b;
+    --danger: #ff8a8f;
+    --toast-bg: #f1efff;
+    --toast-text: #14122b;
+    --shadow: 0 8px 24px rgb(0 0 0 / 0.40);
     color-scheme: dark;
   }
 }
 
 :root[data-theme='dark'] {
-  --bg: #121212;
-  --surface: #1c1c1c;
-  --surface-2: #262626;
-  --text: #f2f2ef;
-  --text-2: #a3a39e;
-  --border: #2e2e2e;
-  --accent: #8cc4b2;
-  --accent-text: #0e1f1a;
-  --danger: #f2b8b5;
-  --toast-bg: #f2f2ef;
-  --toast-text: #141414;
+  --bg: #100e1f;
+  --surface: #1c1a31;
+  --surface-2: #2a2650;
+  --text: #f1efff;
+  --text-2: #a29fc4;
+  --border: #2c2a47;
+  --accent: #9d8bff;
+  --accent-soft: #2e2760;
+  --accent-text: #14122b;
+  --danger: #ff8a8f;
+  --toast-bg: #f1efff;
+  --toast-text: #14122b;
+  --shadow: 0 8px 24px rgb(0 0 0 / 0.40);
   color-scheme: dark;
 }

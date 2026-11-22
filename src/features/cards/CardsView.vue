@@ -34,9 +34,9 @@ function demoAdd() {
   gap: 12px;
 }
 .art { position: relative; width: 168px; height: 120px; margin-bottom: 12px; }
-.card { position: absolute; width: 152px; height: 96px; border-radius: 14px; }
-.back { left: 16px; top: 0; background: var(--surface-2); transform: rotate(-6deg); }
-.front { left: 0; top: 20px; background: var(--accent); }
+.card { position: absolute; width: 152px; height: 96px; border-radius: 22px; }
+.back { left: 16px; top: 0; background: #f5a524; transform: rotate(-6deg); }
+.front { left: 0; top: 20px; background: var(--accent); box-shadow: var(--shadow); }
 h2 { font-size: 20px; font-weight: 650; }
 p { color: var(--text-2); max-width: 300px; }
 .primary {

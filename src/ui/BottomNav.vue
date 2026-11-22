@@ -20,12 +20,14 @@ const items = [
 <style scoped>
 .nav {
   position: fixed;
-  left: 0; right: 0; bottom: 0;
-  height: calc(var(--nav-h) + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
+  left: 16px; right: 16px;
+  bottom: calc(var(--nav-gap) + env(safe-area-inset-bottom));
+  height: var(--nav-h);
   display: flex;
   background: var(--surface);
-  border-top: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
   z-index: 50;
 }
 .item {
@@ -40,5 +42,7 @@ const items = [
   font-size: 12px;
   transition: color 0.15s;
 }
-.item.active { color: var(--accent); font-weight: 600; }
+.item.active { color: var(--accent); font-weight: 700; }
+.item svg { padding: 2px 10px; box-sizing: content-box; border-radius: 10px; transition: background 0.15s; }
+.item.active svg { background: var(--accent-soft); }
 </style>

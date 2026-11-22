@@ -36,8 +36,8 @@ const options: { value: ThemeMode; label: string }[] = [
 <style scoped>
 .group { padding: 8px 16px 20px; }
 .label { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-2); margin-bottom: 10px; }
-.segmented { display: flex; padding: 4px; gap: 4px; background: var(--surface-2); border-radius: 14px; }
-.segmented button { flex: 1; min-height: 44px; border-radius: 10px; font-size: 15px; color: var(--text-2); transition: background 0.15s, color 0.15s; }
-.segmented button.on { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+.segmented { display: flex; padding: 4px; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; }
+.segmented button { flex: 1; min-height: 44px; border-radius: 14px; font-size: 15px; color: var(--text-2); transition: background 0.15s, color 0.15s; }
+.segmented button.on { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
 .muted { color: var(--text-2); }
 </style>

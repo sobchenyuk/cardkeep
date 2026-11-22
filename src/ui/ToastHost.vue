@@ -27,7 +27,7 @@ const toast = useToast()
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 12px);
+  bottom: calc(var(--nav-h) + var(--nav-gap) + env(safe-area-inset-bottom) + 12px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -45,8 +45,9 @@ const toast = useToast()
   max-width: 420px;
   min-height: 48px;
   padding: 12px 16px;
-  border-radius: 14px;
+  border-radius: 18px;
   background: var(--toast-bg);
+  box-shadow: var(--shadow);
   color: var(--toast-text);
   font-size: 15px;
 }
