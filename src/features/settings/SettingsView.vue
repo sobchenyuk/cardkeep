@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import PageHeader from '@/ui/PageHeader.vue'
 import { useSettings, type ThemeMode } from '@/stores/settings'
+import BackupSection from '@/features/backup/BackupSection.vue'
 
 const settings = useSettings()
 const options: { value: ThemeMode; label: string }[] = [
@@ -29,7 +30,7 @@ const options: { value: ThemeMode; label: string }[] = [
   </section>
   <section class="group">
     <h2 class="label">Резервна копія</h2>
-    <p class="muted">Експорт та імпорт ZIP-архівом з'являться в наступних версіях.</p>
+    <BackupSection />
   </section>
 </template>
 
