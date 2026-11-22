@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { CodeFormat } from '@/db'
 import { useCards, type CardDraft } from '@/stores/cards'
 import { useCategories, CategoryError } from '@/stores/categories'
 import { useToast } from '@/stores/toast'
 import PhotoSlot from './PhotoSlot.vue'
 import ScannerOverlay from '@/features/scan/ScannerOverlay.vue'
+import CameraCapture from '@/features/scan/CameraCapture.vue'
 import { detectInImage, type ScanResult } from '@/features/scan/detector'
 
 const props = defineProps<{ id?: string }>()
@@ -19,28 +19,11 @@ const toast = useToast()
 const existing = props.id ? cards.get(props.id) : undefined
 const isEdit = !!existing
 
-const FORMATS: { value: CodeFormat; label: string }[] = [
-  { value: 'ean13', label: 'EAN-13 (штрих-код)' },
-  { value: 'qr', label: 'QR-код' },
-  { value: 'code128', label: 'Code 128' },
-  { value: 'ean8', label: 'EAN-8' },
-  { value: 'upca', label: 'UPC-A' },
-  { value: 'upce', label: 'UPC-E' },
-  { value: 'code39', label: 'Code 39' },
-  { value: 'code93', label: 'Code 93' },
-  { value: 'codabar', label: 'Codabar' },
-  { value: 'itf', label: 'ITF (Interleaved 2 of 5)' },
-  { value: 'pdf417', label: 'PDF417' },
-  { value: 'datamatrix', label: 'Data Matrix' },
-  { value: 'aztec', label: 'Aztec' },
-  { value: 'none', label: 'Без коду (лише номер)' },
-]
-
 const form = reactive<CardDraft>({
   id: existing?.id,
   title: existing?.title ?? '',
   code: existing?.code ?? '',
-  codeFormat: existing?.codeFormat ?? 'ean13',
+  codeFormat: existing?.codeFormat ?? 'auto',
   description: existing?.description ?? '',
   categoryId: existing?.categoryId ?? null,
   frontPhoto: existing?.frontPhoto ?? null,
@@ -86,8 +69,19 @@ const closeScanner = () => (window.history.state?.back ? router.back() : router.
 function applyScan(r: ScanResult, source: string) {
   form.code = r.code
   form.codeFormat = r.format
-  const label = FORMATS.find((f) => f.value === r.format)?.label ?? r.format
-  toast.show('success', `${source}: ${label}`)
+  toast.show('success', `${source}: ${r.code}`)
+}
+
+// Photo camera (?photo=front|back), also in history for the back button.
+const frontSlot = ref<InstanceType<typeof PhotoSlot>>()
+const backSlot = ref<InstanceType<typeof PhotoSlot>>()
+const photoSide = computed(() => (route.query.photo === 'front' || route.query.photo === 'back' ? route.query.photo : null))
+const openCamera = (side: 'front' | 'back') => router.push({ query: { ...route.query, photo: side } })
+const closeCamera = () => (window.history.state?.back ? router.back() : router.replace({ query: { ...route.query, photo: undefined } }))
+function onCaptured(blob: Blob) {
+  const slot = photoSide.value === 'back' ? backSlot.value : frontSlot.value
+  closeCamera()
+  slot?.process(blob)
 }
 function onScanned(r: ScanResult) {
   closeScanner()
@@ -95,7 +89,7 @@ function onScanned(r: ScanResult) {
 }
 
 // When a card photo is added and the code is still empty, try to read the code from it.
-async function autoDetect(file: File) {
+async function autoDetect(file: Blob) {
   if (form.code.trim()) return
   try {
     const r = await detectInImage(file)
@@ -156,8 +150,8 @@ const back = () => (window.history.state?.back ? router.back() : router.replace(
 
   <form class="form" novalidate @submit.prevent="save">
     <div class="photos">
-      <PhotoSlot v-model="form.frontPhoto" label="Лицьова" @picked="autoDetect" />
-      <PhotoSlot v-model="form.backPhoto" label="Зворотна" @picked="autoDetect" />
+      <PhotoSlot ref="frontSlot" v-model="form.frontPhoto" label="Лицьова" @picked="autoDetect" @request="openCamera('front')" />
+      <PhotoSlot ref="backSlot" v-model="form.backPhoto" label="Зворотна" @picked="autoDetect" @request="openCamera('back')" />
     </div>
 
     <label class="field">
@@ -169,19 +163,13 @@ const back = () => (window.history.state?.back ? router.back() : router.replace(
     <div class="field">
       <span>Номер / код картки</span>
       <div class="coderow">
-        <input v-model="form.code" class="input mono" placeholder="Будь-яка кількість цифр чи символів" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Номер / код картки" />
+        <input v-model="form.code" class="input mono" placeholder="Будь-яка кількість цифр чи символів" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Номер / код картки" @input="form.codeFormat = 'auto'" />
         <button type="button" class="scanbtn" aria-label="Сканувати код" @click="openScanner">
           <svg viewBox="0 0 24 24" width="24" height="24"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M7 12h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
         </button>
       </div>
     </div>
 
-    <label class="field">
-      <span>Формат коду</span>
-      <select v-model="form.codeFormat" class="input">
-        <option v-for="f in FORMATS" :key="f.value" :value="f.value">{{ f.label }}</option>
-      </select>
-    </label>
 
     <div class="field">
       <span>Категорія</span>
@@ -210,6 +198,7 @@ const back = () => (window.history.state?.back ? router.back() : router.replace(
   </form>
 
   <ScannerOverlay v-if="scanning" @result="onScanned" @close="closeScanner" />
+  <CameraCapture v-if="photoSide" :title="photoSide === 'front' ? 'Лицьова сторона' : 'Зворотна сторона'" @captured="onCaptured" @close="closeCamera" />
 </template>
 
 <style scoped>

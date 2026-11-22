@@ -4,7 +4,7 @@ import type { CodeFormat } from '@/db'
 
 const props = defineProps<{ code: string; format: CodeFormat }>()
 
-const BCID: Record<Exclude<CodeFormat, 'none'>, string> = {
+const BCID: Record<Exclude<CodeFormat, 'none' | 'auto'>, string> = {
   qr: 'qrcode',
   ean13: 'ean13',
   ean8: 'ean8',
@@ -21,6 +21,15 @@ const BCID: Record<Exclude<CodeFormat, 'none'>, string> = {
 }
 const SQUARE = new Set<CodeFormat>(['qr', 'datamatrix', 'aztec'])
 
+/** 'auto' (typed by hand): retail lengths get their usual symbology, anything else Code 128. */
+function resolve(format: CodeFormat, code: string): Exclude<CodeFormat, 'none' | 'auto'> {
+  if (format !== 'auto' && format !== 'none') return format
+  if (/^\d{13}$/.test(code)) return 'ean13'
+  if (/^\d{12}$/.test(code)) return 'upca'
+  if (/^\d{8}$/.test(code)) return 'ean8'
+  return 'code128'
+}
+
 const svg = ref('')
 const failed = ref(false)
 const fallback = ref(false)
@@ -34,8 +43,9 @@ watchEffect(async () => {
     // Lazy: the barcode library is large and only needed on this screen.
     const { toSVG } = await import('bwip-js')
     // Note: omit `height` for 2D codes entirely — bwip-js rejects undefined values.
-    const opts: Parameters<typeof toSVG>[0] = { bcid: BCID[props.format], text: props.code, scale: 3 }
-    if (!SQUARE.has(props.format)) opts.height = 18
+    const fmt = resolve(props.format, props.code)
+    const opts: Parameters<typeof toSVG>[0] = { bcid: BCID[fmt], text: props.code, scale: 3 }
+    if (!SQUARE.has(fmt)) opts.height = 18
     try {
       svg.value = toSVG(opts)
     } catch {
@@ -51,7 +61,7 @@ watchEffect(async () => {
 </script>
 
 <template>
-  <div v-if="code" class="code" :class="{ square: SQUARE.has(format) && !fallback }">
+  <div v-if="code" class="code" :class="{ square: SQUARE.has(resolve(format, code)) && !fallback }">
     <div v-if="svg" class="img" v-html="svg" />
     <p v-else-if="failed" class="warn">Не вдалося намалювати код — покажіть номер касиру</p>
     <p class="num">{{ code }}</p>

@@ -5,13 +5,12 @@ import { compressImage, CompressError, formatKB } from '@/utils/compress'
 import { useToast } from '@/stores/toast'
 
 const props = defineProps<{ label: string; modelValue: Blob | null }>()
-const emit = defineEmits<{ 'update:modelValue': [Blob | null]; picked: [File] }>()
+const emit = defineEmits<{ 'update:modelValue': [Blob | null]; picked: [Blob]; request: [] }>()
 const toast = useToast()
 const url = useObjectUrl(toRef(() => props.modelValue))
-const input = ref<HTMLInputElement>()
 const busy = ref(false)
 
-async function process(file: File) {
+async function process(file: Blob) {
   busy.value = true
   const id = toast.show('progress', 'Стискаємо фото…')
   try {
@@ -27,17 +26,12 @@ async function process(file: File) {
   }
 }
 
-function onPick(e: Event) {
-  const el = e.target as HTMLInputElement
-  const file = el.files?.[0]
-  el.value = ''
-  if (file) process(file)
-}
+defineExpose({ process })
 </script>
 
 <template>
   <div class="slot">
-    <button type="button" class="frame" :class="{ has: !!url }" :disabled="busy" @click="input?.click()">
+    <button type="button" class="frame" :class="{ has: !!url }" :disabled="busy" @click="emit('request')">
       <img v-if="url" :src="url" alt="" />
       <template v-else>
         <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6H8l1.5-2h5L16 6h1.5A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /><circle cx="12" cy="12.5" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8" /></svg>
@@ -49,7 +43,6 @@ function onPick(e: Event) {
       <span class="lbl">{{ label }}</span>
       <button v-if="url" type="button" class="rm" @click="emit('update:modelValue', null)">Прибрати</button>
     </div>
-    <input ref="input" type="file" accept="image/*" hidden @change="onPick" />
   </div>
 </template>
 

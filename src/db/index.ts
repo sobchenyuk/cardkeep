@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie'
 
 export type CodeFormat =
+  | 'auto' // typed manually: format is picked from the value when rendering
   | 'qr'
   | 'ean13'
   | 'ean8'
