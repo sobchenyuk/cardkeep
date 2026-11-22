@@ -90,7 +90,8 @@ async function save() {
   const id = toast.show('progress', 'Зберігаємо…')
   try {
     const card = await cards.save({ ...form })
-    toast.update(id, 'success', 'Збережено')
+    toast.update(id, 'success', isEdit ? 'Зміни збережено' : `Картку «${card.title}» додано`)
+    // Leave the form and show the saved card right away; the user returns to the list themselves.
     router.replace({ name: 'cards', query: { card: card.id } })
   } catch (e) {
     const quota = (e as DOMException)?.name === 'QuotaExceededError'

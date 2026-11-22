@@ -16,6 +16,8 @@ const cards = useCards()
 const categories = useCategories()
 const ready = ref(false)
 const hideNav = computed(() => !!route.meta.hideNav)
+// Toasts move to the top when the bottom area is busy (forms, open card sheet).
+const toastsTop = computed(() => hideNav.value || !!route.query.card)
 
 async function load() {
   try {
@@ -43,7 +45,7 @@ const { updateServiceWorker } = useRegisterSW({
       <RouterView v-if="ready" />
     </main>
     <BottomNav v-if="!hideNav" />
-    <ToastHost :class="{ low: hideNav }" />
+    <ToastHost :class="{ low: toastsTop }" />
   </div>
 </template>
 

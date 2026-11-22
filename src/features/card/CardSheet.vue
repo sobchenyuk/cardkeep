@@ -30,39 +30,77 @@ function onScroll() {
   if (el) active.value = Math.round(el.scrollLeft / el.clientWidth)
 }
 
-// Swipe-down to close.
+// Swipe-down to close. Touch events (non-passive) so we can stop the browser
+// from turning the gesture into a scroll / pull-to-refresh; pointer events for mouse.
 const sheet = ref<HTMLElement>()
 const body = ref<HTMLElement>()
 const dragY = ref(0)
 const dragging = ref(false)
 const closing = ref(false)
-let startY = 0
+let sx = 0
+let sy = 0
 let tracking = false
+let decided = false
 
-function down(e: PointerEvent) {
-  // Only start a dismiss gesture when the content is scrolled to top.
-  if ((body.value?.scrollTop ?? 0) > 0) return
-  if ((e.target as HTMLElement).closest('.slider, .desc')) return
-  tracking = true
-  startY = e.clientY
+function canStart(target: EventTarget | null) {
+  if ((body.value?.scrollTop ?? 0) > 0) return false
+  const desc = (target as HTMLElement | null)?.closest?.('.desc') as HTMLElement | null
+  return !(desc && desc.scrollTop > 0)
 }
-function move(e: PointerEvent) {
-  if (!tracking) return
-  const dy = e.clientY - startY
-  if (!dragging.value && dy > 8) {
+function begin(x: number, y: number, target: EventTarget | null) {
+  tracking = canStart(target)
+  decided = false
+  sx = x
+  sy = y
+}
+/** Returns true when the gesture is a sheet drag (caller should preventDefault). */
+function drag(x: number, y: number): boolean {
+  if (!tracking) return false
+  const dx = x - sx
+  const dy = y - sy
+  if (!decided) {
+    if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return false
+    decided = true
+    // Horizontal = photo slider; upward = content scroll.
+    if (Math.abs(dx) > Math.abs(dy) || dy < 0) {
+      tracking = false
+      return false
+    }
     dragging.value = true
-    sheet.value?.setPointerCapture(e.pointerId)
   }
-  if (dragging.value) dragY.value = Math.max(0, dy)
+  dragY.value = Math.max(0, dy)
+  return true
 }
-function up() {
+function finish() {
   tracking = false
   if (!dragging.value) return
   dragging.value = false
-  if (dragY.value > 110) close()
+  if (dragY.value > 100) close()
   else dragY.value = 0
 }
+
+function onTouchStart(e: TouchEvent) {
+  if (e.touches.length !== 1) return
+  begin(e.touches[0].clientX, e.touches[0].clientY, e.target)
+}
+function onTouchMove(e: TouchEvent) {
+  if (drag(e.touches[0].clientX, e.touches[0].clientY) && e.cancelable) e.preventDefault()
+}
+function onPointerDown(e: PointerEvent) {
+  if (e.pointerType !== 'mouse' || e.button !== 0) return
+  begin(e.clientX, e.clientY, e.target)
+  const mv = (ev: PointerEvent) => drag(ev.clientX, ev.clientY)
+  const upf = () => {
+    window.removeEventListener('pointermove', mv)
+    window.removeEventListener('pointerup', upf)
+    finish()
+  }
+  window.addEventListener('pointermove', mv)
+  window.addEventListener('pointerup', upf)
+}
+
 function close() {
+  if (closing.value) return
   closing.value = true
   setTimeout(() => emit('close'), 220)
 }
@@ -70,7 +108,14 @@ function close() {
 function onKey(e: KeyboardEvent) {
   if (e.key === 'Escape') close()
 }
-onMounted(() => window.addEventListener('keydown', onKey))
+onMounted(() => {
+  window.addEventListener('keydown', onKey)
+  const el = sheet.value!
+  el.addEventListener('touchstart', onTouchStart, { passive: true })
+  el.addEventListener('touchmove', onTouchMove, { passive: false })
+  el.addEventListener('touchend', finish)
+  el.addEventListener('touchcancel', finish)
+})
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 async function share() {
@@ -100,10 +145,7 @@ async function share() {
       :aria-label="card.title"
       :class="{ dragging }"
       :style="dragY ? { transform: `translateY(${dragY}px)` } : undefined"
-      @pointerdown="down"
-      @pointermove="move"
-      @pointerup="up"
-      @pointercancel="up"
+      @pointerdown="onPointerDown"
     >
       <button class="handle" aria-label="Закрити" @click="close"><span /></button>
       <div ref="body" class="body">
@@ -153,14 +195,13 @@ async function share() {
   flex-direction: column;
   animation: rise 0.32s var(--ease);
   transition: transform 0.22s var(--ease);
-  touch-action: pan-y;
 }
 .sheet.dragging { transition: none; }
 .closing .sheet { transform: translateY(100%) !important; }
 .closing .scrim { opacity: 0; transition: opacity 0.22s; }
 .handle { display: flex; justify-content: center; padding: 10px 0 12px; width: 100%; flex: none; }
 .handle span { width: 44px; height: 5px; border-radius: 3px; background: var(--border); }
-.body { overflow-y: auto; padding: 0 16px calc(24px + env(safe-area-inset-bottom)); overscroll-behavior: contain; }
+.body { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 16px calc(24px + env(safe-area-inset-bottom)); overscroll-behavior: contain; }
 
 .slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; scrollbar-width: none; border-radius: var(--radius-card); }
 .slider::-webkit-scrollbar { display: none; }

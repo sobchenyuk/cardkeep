@@ -40,7 +40,11 @@ const openCard = computed(() => {
   return id ? cards.get(id) : undefined
 })
 const open = (id: string) => router.push({ query: { ...route.query, card: id } })
-const close = () => router.back()
+// Close the sheet: step back if we came from the list, otherwise just drop the query.
+const close = () => {
+  if (window.history.state?.back) router.back()
+  else router.replace({ query: { ...route.query, card: undefined } })
+}
 const edit = (id: string) => router.replace({ name: 'edit', params: { id } })
 </script>
 
